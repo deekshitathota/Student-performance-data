@@ -2,7 +2,7 @@
 Clustering and Fitting Assignment.
 
 This script performs a comprehensive analysis of student performance data,
-including statistical moments, data visualization, K-Means clustering, 
+including statistical moments, data visualization, K-Means clustering,
 and linear polynomial fitting.
 """
 
@@ -17,8 +17,10 @@ from sklearn.preprocessing import StandardScaler
 
 def plot_relational_plot(df):
     plt.figure(figsize=(10, 6))
-    sns.scatterplot(data=df, x='Absences', y='GPA',
-                    hue='GradeClass', palette='viridis', alpha=0.7)
+    sns.scatterplot(
+        data=df, x='Absences', y='GPA',
+        hue='GradeClass', palette='viridis', alpha=0.7
+    )
     plt.title('Impact of Absences on Student GPA')
     plt.xlabel('Number of Absences')
     plt.ylabel('GPA')
@@ -29,8 +31,10 @@ def plot_relational_plot(df):
 
 def plot_categorical_plot(df):
     plt.figure(figsize=(8, 6))
-    sns.barplot(data=df, x='GradeClass', y='GPA',
-                estimator=np.mean, palette='coolwarm')
+    sns.barplot(
+        data=df, x='GradeClass', y='GPA',
+        estimator=np.mean, palette='coolwarm'
+    )
     plt.title('Average GPA per Grade Category')
     plt.xlabel('Grade Class')
     plt.ylabel('Mean GPA')
@@ -48,13 +52,10 @@ def plot_statistical_plot(df):
 
 
 def statistical_analysis(df, col):
-    # ✅ FIXED LINE (this was your error before)
     mean = df[col].mean()
-
     stddev = df[col].std()
     skew = ss.skew(df[col])
     kurtosis = ss.kurtosis(df[col])
-
     return mean, stddev, skew, kurtosis
 
 
@@ -82,7 +83,6 @@ def perform_clustering(df, col1, col2):
     scaler = StandardScaler()
     scaled = scaler.fit_transform(data)
 
-    # Elbow plot
     inertia = []
     for k in range(1, 11):
         model = KMeans(n_clusters=k, n_init=10, random_state=42)
@@ -96,7 +96,6 @@ def perform_clustering(df, col1, col2):
     plt.savefig('elbow_plot.png')
     plt.show()
 
-    # Final clustering
     model = KMeans(n_clusters=4, n_init=10, random_state=42)
     labels = model.fit_predict(scaled)
 
@@ -109,8 +108,10 @@ def plot_clustered_data(labels, data, centers):
     plt.figure(figsize=(10, 6))
 
     plt.scatter(data[:, 0], data[:, 1], c=labels, cmap='viridis')
-    plt.scatter(centers[:, 0], centers[:, 1],
-                c='red', marker='X', s=200)
+    plt.scatter(
+        centers[:, 0], centers[:, 1],
+        c='red', marker='X', s=200
+    )
 
     plt.xlabel('Study Time Weekly')
     plt.ylabel('GPA')
@@ -148,7 +149,7 @@ def plot_fitted_data(x, y, x_line, y_line):
 def main():
     try:
         df = pd.read_csv('Student_performance_data _.csv')
-    except:
+    except FileNotFoundError:
         print("File not found")
         return
 
@@ -161,10 +162,14 @@ def main():
     moments = statistical_analysis(df, 'GPA')
     writing(moments, 'GPA')
 
-    labels, data, centers = perform_clustering(df, 'StudyTimeWeekly', 'GPA')
+    labels, data, centers = perform_clustering(
+        df, 'StudyTimeWeekly', 'GPA'
+    )
     plot_clustered_data(labels, data, centers)
 
-    x, y, x_line, y_line = perform_fitting(df, 'Absences', 'GPA')
+    x, y, x_line, y_line = perform_fitting(
+        df, 'Absences', 'GPA'
+    )
     plot_fitted_data(x, y, x_line, y_line)
 
     print("Done")
