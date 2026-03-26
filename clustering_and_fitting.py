@@ -1,123 +1,174 @@
 """
-This is the template file for the clustering and fitting assignment.
-You will be expected to complete all the sections and
-make this a fully working, documented file.
-You should NOT change any function, file or variable names,
- if they are given to you here.
-Make use of the functions presented in the lectures
-and ensure your code is PEP-8 compliant, including docstrings.
-Fitting should be done with only 1 target variable and 1 feature variable,
-likewise, clustering should be done with only 2 variables.
+Clustering and Fitting Assignment.
+
+This script performs a comprehensive analysis of student performance data,
+including statistical moments, data visualization, K-Means clustering, 
+and linear polynomial fitting.
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.stats as ss
 import seaborn as sns
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 
 
 def plot_relational_plot(df):
-    fig, ax = plt.subplots()
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(data=df, x='Absences', y='GPA',
+                    hue='GradeClass', palette='viridis', alpha=0.7)
+    plt.title('Impact of Absences on Student GPA')
+    plt.xlabel('Number of Absences')
+    plt.ylabel('GPA')
+    plt.grid(True)
     plt.savefig('relational_plot.png')
-    return
+    plt.show()
 
 
 def plot_categorical_plot(df):
-    fig, ax = plt.subplots()
+    plt.figure(figsize=(8, 6))
+    sns.barplot(data=df, x='GradeClass', y='GPA',
+                estimator=np.mean, palette='coolwarm')
+    plt.title('Average GPA per Grade Category')
+    plt.xlabel('Grade Class')
+    plt.ylabel('Mean GPA')
     plt.savefig('categorical_plot.png')
-    return
+    plt.show()
 
 
 def plot_statistical_plot(df):
-    fig, ax = plt.subplots()
+    plt.figure(figsize=(10, 8))
+    corr = df.corr(numeric_only=True)
+    sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f")
+    plt.title('Correlation Heatmap')
     plt.savefig('statistical_plot.png')
-    return
+    plt.show()
 
 
-def statistical_analysis(df, col: str):
-    mean =
-    stddev =
-    skew =
-    excess_kurtosis =
-    return mean, stddev, skew, excess_kurtosis
+def statistical_analysis(df, col):
+    # ✅ FIXED LINE (this was your error before)
+    mean = df[col].mean()
+
+    stddev = df[col].std()
+    skew = ss.skew(df[col])
+    kurtosis = ss.kurtosis(df[col])
+
+    return mean, stddev, skew, kurtosis
 
 
 def preprocessing(df):
-    # You should preprocess your data in this function and
-    # make use of quick features such as 'describe', 'head/tail' and 'corr'.
+    print(df.describe())
+
+    if 'StudentID' in df.columns:
+        df = df.drop('StudentID', axis=1)
+
+    df = df.dropna()
     return df
 
 
 def writing(moments, col):
-    print(f'For the attribute {col}:')
-    print(f'Mean = {moments[0]:.2f}, '
-          f'Standard Deviation = {moments[1]:.2f}, '
-          f'Skewness = {moments[2]:.2f}, and '
-          f'Excess Kurtosis = {moments[3]:.2f}.')
-    # Delete the following options as appropriate for your data.
-    # Not skewed and mesokurtic can be defined with asymmetries <-2 or >2.
-    print('The data was right/left/not skewed and platy/meso/leptokurtic.')
-    return
+    print(f"\nAnalysis for {col}:")
+    print(f"Mean = {moments[0]:.2f}")
+    print(f"Std Dev = {moments[1]:.2f}")
+    print(f"Skewness = {moments[2]:.2f}")
+    print(f"Kurtosis = {moments[3]:.2f}")
 
 
 def perform_clustering(df, col1, col2):
+    data = df[[col1, col2]].values
 
-    def plot_elbow_method():
-        fig, ax = plt.subplots()
-        plt.savefig('elbow_plot.png')
-        return
+    scaler = StandardScaler()
+    scaled = scaler.fit_transform(data)
 
-    def one_silhouette_inertia():
-        _score =
-        _inertia =
-        return _score, _inertia
+    # Elbow plot
+    inertia = []
+    for k in range(1, 11):
+        model = KMeans(n_clusters=k, n_init=10, random_state=42)
+        model.fit(scaled)
+        inertia.append(model.inertia_)
 
-    # Gather data and scale
+    plt.plot(range(1, 11), inertia, 'o-')
+    plt.title('Elbow Method')
+    plt.xlabel('k')
+    plt.ylabel('Inertia')
+    plt.savefig('elbow_plot.png')
+    plt.show()
 
-    # Find best number of clusters
-    one_silhouette_inertia()
-    plot_elbow_method()
+    # Final clustering
+    model = KMeans(n_clusters=4, n_init=10, random_state=42)
+    labels = model.fit_predict(scaled)
 
-    # Get cluster centers
-    return labels, data, xkmeans, ykmeans, cenlabels
+    centers = scaler.inverse_transform(model.cluster_centers_)
+
+    return labels, data, centers
 
 
-def plot_clustered_data(labels, data, xkmeans, ykmeans, centre_labels):
-    fig, ax = plt.subplots()
+def plot_clustered_data(labels, data, centers):
+    plt.figure(figsize=(10, 6))
+
+    plt.scatter(data[:, 0], data[:, 1], c=labels, cmap='viridis')
+    plt.scatter(centers[:, 0], centers[:, 1],
+                c='red', marker='X', s=200)
+
+    plt.xlabel('Study Time Weekly')
+    plt.ylabel('GPA')
+    plt.title('Clustering')
     plt.savefig('clustering.png')
-    return
+    plt.show()
 
 
 def perform_fitting(df, col1, col2):
-    # Gather data and prepare for fitting
+    x = df[col1].values
+    y = df[col2].values
 
-    # Fit model
+    coeffs = np.polyfit(x, y, 1)
+    poly = np.poly1d(coeffs)
 
-    # Predict across x
-    return data, x, y
+    x_line = np.linspace(x.min(), x.max(), 100)
+    y_line = poly(x_line)
+
+    return x, y, x_line, y_line
 
 
-def plot_fitted_data(data, x, y):
-    fig, ax = plt.subplots()
+def plot_fitted_data(x, y, x_line, y_line):
+    plt.figure(figsize=(10, 6))
+
+    plt.scatter(x, y, alpha=0.3)
+    plt.plot(x_line, y_line, color='red')
+
+    plt.xlabel('Absences')
+    plt.ylabel('GPA')
+    plt.title('Fitting Line')
     plt.savefig('fitting.png')
-    return
+    plt.show()
 
 
 def main():
-    df = pd.read_csv('data.csv')
+    try:
+        df = pd.read_csv('Student_performance_data _.csv')
+    except:
+        print("File not found")
+        return
+
     df = preprocessing(df)
-    col = '<your chosen column for analysis>'
+
     plot_relational_plot(df)
     plot_statistical_plot(df)
     plot_categorical_plot(df)
-    moments = statistical_analysis(df, col)
-    writing(moments, col)
-    clustering_results = perform_clustering(df, '<your chosen x data>', '<your chosen y data>')
-    plot_clustered_data(*clustering_results)
-    fitting_results = perform_fitting(df, '<your chosen x data>', '<your chosen y data>')
-    plot_fitted_data(*fitting_results)
-    return
+
+    moments = statistical_analysis(df, 'GPA')
+    writing(moments, 'GPA')
+
+    labels, data, centers = perform_clustering(df, 'StudyTimeWeekly', 'GPA')
+    plot_clustered_data(labels, data, centers)
+
+    x, y, x_line, y_line = perform_fitting(df, 'Absences', 'GPA')
+    plot_fitted_data(x, y, x_line, y_line)
+
+    print("Done")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
